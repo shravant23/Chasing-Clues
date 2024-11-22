@@ -2,30 +2,58 @@ import re
 
 
 def read_file(file_path):
-   result_dict = {}
+    result_list = []
+    result_dict = {}
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Extract the license plate from the first 8 characters
+            license_plate = line[:8]
+
+            # Check if the license plate matches the criteria
+            if re.search(r"^(?=.*D)(?=.*6)(?=.*7)", license_plate):
+                # Split the line into fields
+                data_list = line.strip().split("\t")
+
+                # Assign variables to each field based on the new format
+                license_plate = data_list[0]
+                state = data_list[1]
+                make_model = data_list[2]
+                color = data_list[3]
+                vin = data_list[4]
+                ssn = data_list[5]
+                address_full = data_list[6]
+
+                # Extract the make and model
+                make, model = make_model.split(" ", 1)  # Split only on the first space
+
+                # Split the address into its components
+                full_address = address_full.split(",")
+                full_address.append(state)
 
 
-   # First loop: Process the file and build the result_dict
-   with open(file_path, 'r') as file:
-       for line in file:
-           license_plate = line[:8]
-           if re.search(r"^(?=.*D)(?=.*6)(?=.*7)", license_plate):
-               data_list = line.strip().split("\t")  # Split the line by tabs
-               ssn = data_list[5]  # SSN is the 6th element (index 5)
-               address = data_list[1]  # The second element in the data_list is the address
-               result_dict[ssn] = [address] + data_list[2:5]  # Store address first, followed by other data
 
+                # Create the new list format
+                new_list = [full_address, license_plate, make, model, vin, color]
 
-   # Second loop: Filter the dictionary to only include entries where Virginia is in the address
-   virginia_dict = {}
-   for ssn in result_dict:
-       address = result_dict[ssn][0]  # The first part of the data is the address
-       if "Virginia" in address:  # Check if Virginia is part of the address
-           virginia_dict[ssn] = result_dict[ssn]
+                # Append the new list to the result list
+                result_list.append(new_list)
+                result_dict[ssn] = new_list
 
-
-   return virginia_dict
-
+    # Print each list on a new line
+    color_criteria = 'White'
+    make_criteria = 'Toyota'
+    model_criteria = 'Camry'
+    state_criteria = 'Virginia'
+    filtered_dict = {}
+    for ssn in result_dict:
+        info = result_dict[ssn]
+        if (info[5].lower() == color_criteria.lower() and  # Check color
+                info[2].lower() == make_criteria.lower() and  # Check make
+                info[3].lower() == model_criteria.lower() and  # Check model
+                info[0][-1].lower() == state_criteria.lower()):  # Check state (last part of the address)
+            filtered_dict[ssn] = info
+    return filtered_dict
 
 
 
